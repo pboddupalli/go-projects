@@ -2,7 +2,15 @@ package strings
 
 import "strconv"
 
+type TokenType int
+
+const (
+  SimpleString TokenType = iota
+  RepeatedString
+)
+
 type Token struct {
+  tokenType TokenType
   count int
   s string
 }
@@ -15,7 +23,7 @@ func decode(s string, count int) string {
   splits := parse(s)
   var tmp string
   for _, split := range splits {
-    if split.count == 0 {
+    if split.tokenType == SimpleString {
       tmp = tmp + split.s
     } else {
       tmp = tmp + decode(split.s, split.count)
@@ -37,11 +45,11 @@ func parse(s string) []Token {
   for i := 0; i < len(s); {
     if isDigit(s[i]) {
       num, i = parseNumber(s, i)
-      val, i = parseBracketedString(s, i)
-      result = append(result, Token{count: num, s: val})
+      val, i = parseRepeatedString(s, i)
+      result = append(result, Token{tokenType: RepeatedString, count: num, s: val})
     } else {
-      val, i = parseRawString(s, i)
-      result = append(result, Token{count: 0, s: val})
+      val, i = parseSimpleString(s, i)
+      result = append(result, Token{tokenType: SimpleString, s: val})
     }
   }
   return result
@@ -64,7 +72,7 @@ func parseNumber(s string, i int) (count int, next int) {
   return num, i
 }
 
-func parseRawString(s string, i int) (string, int) {
+func parseSimpleString(s string, i int) (string, int) {
   start := i
   for i < len(s) && isAlpha(s[i]) {
     i++
@@ -72,7 +80,7 @@ func parseRawString(s string, i int) (string, int) {
   return s[start:i], i
 }
 
-func parseBracketedString(s string, i int) (string, int) {
+func parseRepeatedString(s string, i int) (string, int) {
   i++
   open, start := 1, i
   for ; i < len(s) && open > 0; i++ {
