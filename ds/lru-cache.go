@@ -1,7 +1,5 @@
 package ds
 
-import "fmt"
-
 type Node struct {
   Key int
   Val int
@@ -21,7 +19,6 @@ func Constructor(capacity int) LRUCache {
   res := LRUCache{}
   res.cap = capacity
   res.hashmap = make(map[int]*Node)
-  // no dummy for now...so head and tail will be nil
   return res
 }
 
@@ -39,19 +36,12 @@ func (this *LRUCache) moveToFront(node *Node) {
     // nothing to do
     return
   }
-  // since this is not the head, there is a prev element
-  node.Prev.Next = node.Next
-  if node.Next != nil {
-    // non-tail
-    node.Next.Prev = node.Prev
-  } else {
-    // tail node
-    this.tail = node.Prev
-  }
-  node.Prev = nil
-  node.Next = this.head
-  node.Next.Prev = node
-  this.head = node
+
+  // Step 1: Removal from current Position
+  this.removeFromList(node)
+
+  // Step 2: Add at the head of the list
+  this.insertAtHead(node)
 }
 
 func (this *LRUCache) Put(key int, value int)  {
@@ -60,47 +50,44 @@ func (this *LRUCache) Put(key int, value int)  {
   if ok {
     node.Val = value
     this.moveToFront(node)
-    return
   }
-  if this.len == this.cap {
-    // we just replace the tail values and move the tail to the front
-    delete(this.hashmap, this.tail.Key)
-    this.tail.Key = key
-    this.tail.Val = value
-    this.hashmap[key] = this.tail
-    this.moveToFront(this.tail)
-  } else {
-    node := &Node{Key: key, Val: value, Next: this.head}
-    if this.len == 0 {
-      this.tail = node
+  if !ok {
+    if this.len == this.cap {
+      delete(this.hashmap, this.tail.Key)
+      node = this.tail
+      node.Key = key
+      node.Val = value
+      this.moveToFront(node)
+      this.hashmap[key] = node
     } else {
-      this.head.Prev = node
+      node = &Node{Key:key, Val: value}
+      if this.len == 0 {
+        this.tail = node
+      }
+      this.insertAtHead(node)
+      this.hashmap[key] = node
+      this.len++
     }
-    this.head = node
-    this.hashmap[key] = node
-    this.len++
   }
 }
 
-func (this *LRUCache) walkBack() {
-  tail := this.tail
-  if tail == nil {
-    fmt.Println("tail is nil")
+func (this *LRUCache) removeFromList(node *Node) {
+  if node.Prev != nil {
+    node.Prev.Next = node.Next
   }
-  for tail != nil {
-    fmt.Printf("...%d", tail.Val)
-    tail = tail.Prev
+  if node.Next != nil {
+    node.Next.Prev = node.Prev
   }
-  fmt.Println()
+  if node == this.tail {
+    this.tail = node.Prev
+  }
 }
 
-func (this *LRUCache) walk() {
-  head := this.head
-  for head != nil {
-    fmt.Printf("...%d", head.Val)
-    head = head.Next
+func (this *LRUCache) insertAtHead(node *Node) {
+  node.Prev = nil
+  node.Next = this.head
+  if this.head != nil {
+    this.head.Prev = node
   }
-  fmt.Println()
+  this.head = node
 }
-
-

@@ -10,8 +10,8 @@ func TestLruCache(t *testing.T) {
   lru.Put(1, 1)
   lru.Put(2, 2)
   assert.Equal(t, 1, lru.Get(1))
-  // lru.walk()
-  // lru.walkBack()
+  lru.walk()
+  lru.walkBack()
 
   lru.Put(3, 3)
   assert.Equal(t, -1, lru.Get(2))
